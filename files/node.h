@@ -228,8 +228,7 @@ namespace coen79_lab6
     void list_head_insert(node*& head_ptr, const node::value_type& entry);
     void list_insert(node* previous_ptr, const node::value_type& entry);
     node* list_search(node* head_ptr, const node::value_type& target);
-    const node* list_search
-	(const node* head_ptr, const node::value_type& target);
+    const node* list_search(const node* head_ptr, const node::value_type& target);
     node* list_locate(node* head_ptr, std::size_t position);
     const node* list_locate(const node* head_ptr, std::size_t position);
     void list_head_remove(node*& head_ptr);
