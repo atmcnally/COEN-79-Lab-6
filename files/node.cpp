@@ -15,6 +15,7 @@
 #include "node.h"
 #include <cassert>    // Provides assert
 #include <cstdlib>    // Provides NULL and size_t
+#include <iostream>
 
 using namespace std;
 
@@ -148,17 +149,28 @@ namespace coen79_lab6
     }
 
 	void list_piece(node* start_ptr, node* end_ptr, node*& head_ptr, node*& tail_ptr) {
-		list_head_insert(head_ptr, start_ptr->data());
-		tail_ptr = head_ptr;
 
-		// Copy the rest of the nodes one at a time, adding at the tail of new list.
-		head_ptr = start_ptr->link();
-		while (head_ptr != end_ptr) {
-			list_insert(tail_ptr, head_ptr->data());
-			tail_ptr = tail_ptr->link();
-			head_ptr = head_ptr->link();
+		if (start_ptr == NULL) {
+			head_ptr = NULL;
+			tail_ptr = NULL;
+			return;
+		} else {
+			list_head_insert(head_ptr, start_ptr->data());
+			tail_ptr = head_ptr;
+
+			if(start_ptr == end_ptr) {
+				return;
+			}
+
+			// Copy the rest of the nodes one at a time, adding at the tail of new list.
+			start_ptr = start_ptr->link();
+			while (start_ptr != end_ptr && start_ptr != NULL) {
+				list_insert(tail_ptr, start_ptr->data());
+				tail_ptr = tail_ptr->link();
+				start_ptr = start_ptr->link();
+			}
 		}
-		
+
 	}
 	//Precondition: start_ptr and end_ptr are pointers to nodes on the same linked list, with the start_ptr node at or before the end_ptr node
 	//Postcondition: head_ptr and tail_ptr are the head and tail pointers for a new list that contains the items from start_ptr up to but not including end_ptr.
@@ -166,10 +178,10 @@ namespace coen79_lab6
 
 	size_t list_occurrences(node* head_ptr, const node::value_type& target) {
 		int count = 0;
-		node tmp_ptr = head_ptr;
+		node* tmp_ptr = head_ptr;
 
 		while (tmp_ptr != NULL) {
-			if (tmp_ptr.data() == target) {
+			if (tmp_ptr->data() == target) {
 				count++;
 			}
 			tmp_ptr = tmp_ptr->link();
@@ -183,7 +195,12 @@ namespace coen79_lab6
 
 	void list_insert_at(node*& head_ptr, const node::value_type& entry, size_t position) {
 		assert(position > 0 && position <= list_length(head_ptr) + 1);
-
+		if(position == 1) {
+			list_head_insert(head_ptr, entry);
+		} else {
+			list_insert(list_locate(head_ptr, position - 1), entry);
+		}
+		
 	}
 
 	//Postcondition: A new node has been added to the linked list with entry as the data. The new node occurs at the specified position in the list.
@@ -191,12 +208,16 @@ namespace coen79_lab6
 	//Any nodes that used to be after this specified position have been shifted to make room for the one new node.
 
 	node::value_type list_remove_at(node*& head_ptr, size_t position) {
-		assert(position > 0 and position <= list_length(head_ptr));
-
+		assert(position > 0 && position <= list_length(head_ptr));
 		node::value_type val = list_locate(head_ptr, position)->data();
-		list_remove(list_locate(head_ptr, position - 1));
 
-		reutrn val;
+		if(position == 1) {
+			list_head_remove(head_ptr);
+		} else {
+			list_remove(list_locate(head_ptr, position - 1));
+		}
+
+		return val;
 	}
 	//Postcondition: The node at the specified position has been removed from the linked list
 	//and the function has returned a copy of the data from the removed node.
@@ -207,7 +228,7 @@ namespace coen79_lab6
 		assert((1 <= start) && (start <= finish) && (finish <= list_length(head_ptr)));
 		node *start_ptr;
 		node *end_ptr;
-		list_piece(list_locate(head_ptr, start), list_locate(head_ptr, finish), start_ptr, end_ptr);
+		list_piece(list_locate(head_ptr, start), list_locate(head_ptr, finish)->link(), start_ptr, end_ptr);
 
 		return start_ptr;
 	}
@@ -218,10 +239,12 @@ namespace coen79_lab6
 
 	void list_print(const node* head_ptr) {
 		//use <<
-		for (int i = 0; i < list_length(); i++) {
-			cout << head_ptr->data();
+		while(head_ptr->link() != NULL) {
+			cout << head_ptr->data() << ", ";
 			head_ptr = head_ptr->link();
 		}
+
+		cout << head_ptr->data() << endl;
 	}
 	//Postcondition: The value_type of all the nodes in the linked list are printed
 
@@ -233,11 +256,11 @@ namespace coen79_lab6
 		while (head_ptr != NULL && head_ptr->link() != NULL) {
 			ptr = head_ptr;
 
-				while (ptr->next != NULL)
+				while (ptr->link() != NULL)
 				{
 					if (head_ptr->data() == ptr->link()->data()) {
 						del = ptr->link();
-						ptr->link() = ptr->link()->link();
+						ptr->set_link(ptr->link()->link());
 						delete(del);
 					} else {
 						ptr = ptr->link();

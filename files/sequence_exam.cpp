@@ -285,8 +285,10 @@ int test2( )
     cout << "Now I will test that the sequence has 10, 20, 30, ...";
     cout << TESTSIZE*10 << "." << endl;
     test.start( );
+
     for (i = 1; i <= TESTSIZE; i++)
     {
+        cout << test.current();
         if ((!test.is_item( )) || test.current( ) != i*10)
         {
             cout << "    Test failed to find " << i*10 << endl;

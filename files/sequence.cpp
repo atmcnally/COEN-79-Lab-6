@@ -26,6 +26,7 @@
 #include <cassert> //for assert function
 #include "sequence.h" //header file for class
 #include "node.h" // provides node class
+#include "node.cpp"
 
 using namespace std; //For copy function
 
@@ -55,22 +56,6 @@ namespace coen79_lab6
         init();
         *this = source;
     }
-	/*1. If the source sequence has no current item, then simply copy the source’s
-	linked list with list_copy.Then set both precursor and cursor to the
-	null pointer.
-
-	2. If the current item of the source sequence is its first item, then copy the
-	source’s linked list with list_copy.Then set precursor to null, and set
-	cursor to point to the head node of the newly created linked list.
-		
-	3. If the current item of the source sequence is after its first item, then copy
-	the source’s linked list in two pieces using list_piece from Self - Test
-	Exercise 24 on page 258. The first piece that you copy goes from the head
-	pointer to the precursor; the second piece goes from the cursor to the tail
-	pointer.Put these two pieces together by making the link field of the precursor
-	node point to the cursor node.The reason for copying in two separate
-	pieces is to easily set the precursor and cursor. */
-
 
 	sequence::~sequence() {
 		//delete something
@@ -94,14 +79,36 @@ namespace coen79_lab6
 	//(but if the sequence is empty, then there is no current item).
 
 	void sequence::advance() {
-		assert(is_item());
-		cursor = cursor->link();
-		precursor = precursor->link();
+		if(is_item()) {
+			precursor = cursor;
+
+			if (cursor == tail_ptr) {
+				cursor = NULL;
+			} else {
+				cursor = cursor->link();
+			}
+		}
+		
+
 	}
 	//Postcondition: If the current item was already the last item in the sequence, then there is no longer any current item. 
 	//Otherwise, the new current item is the item immediately after the original current item.
 
 	void sequence::insert(const value_type& entry) {
+		
+		if (cursor == NULL || precursor == NULL) {
+			list_head_insert(head_ptr, entry);
+			cursor = head_ptr;
+			//not sure if below is needed but leaving it is safe
+			precursor = NULL;
+			tail_ptr = head_ptr;
+		} else {
+			list_insert(precursor, entry);
+			cursor = precursor->link();
+			tail_ptr = list_locate(head_ptr, many_nodes);
+		}
+
+		many_nodes++;
 
 	}
 	//Postcondition: A new copy of entry has been inserted in the sequence before the current item. 
@@ -110,37 +117,75 @@ namespace coen79_lab6
 
 
 	void sequence::attach(const value_type& entry) {
+		if (cursor == NULL || precursor == NULL) {
+			list_head_insert(head_ptr, entry);
+			tail_ptr = head_ptr;
+			cursor = head_ptr;
+			//not sure if below is needed but leaving it is safe
+			precursor = NULL;
+			return;
+		} else {
+			list_insert(cursor, entry);
+			precursor = cursor;
+			cursor = cursor->link();
+			tail_ptr = list_locate(head_ptr, many_nodes);
+		}
 
+		many_nodes++;
 	}
 //Postcondition: A new copy of entry has been inserted in the sequence after the current item. If there was no current item, then the new entry has
 //been attached to the end of the sequence. In either case, the newly inserted item is now the current item of the sequence.
 
 	void sequence::remove_current() {
 		assert(is_item());
+		if (cursor == head_ptr) {
+			list_head_remove(head_ptr);
+			cursor = NULL;
+		} else {
+			list_remove(precursor);
+			precursor = cursor;
+			cursor = cursor->link();
+		}
+
+		many_nodes--;
+		tail_ptr = list_locate(head_ptr, many_nodes);
 	}
 	//Postcondition: The current item has been removed from the sequence, and the item after this (if there is one) is now the new current item.
 
 	void sequence::operator =(const sequence& source) {
+		if (this == &source) {
+			return;
+		}
 
+		list_clear(head_ptr);
+		init();
+		list_copy(source.head_ptr, head_ptr, tail_ptr);
+		//set cursors
+		cursor = list_search(head_ptr, source.cursor->data());
+		precursor = list_search(head_ptr, source.precursor->data());
+		//Initializiing many_nodes (or our counter) to 0
+		many_nodes = source.many_nodes;
 	}
 
-	sequence::size_type sequence::() const {
+	sequence::size_type sequence::size() const {
 		return many_nodes;
 	}
-//Postcondition: The return value is the number of items in the sequence.
+	//Postcondition: The return value is the number of items in the sequence.
 
 	bool sequence::is_item() const {
+		if (cursor != NULL) {
+			return true;
+		}
 
+		return false;
 	}
-//     Postcondition: A true return value indicates that there is a valid "current" item that may be retrieved by activating the current
-//     member function (listed below). A false return value indicates that there is no valid current item.
+	//Postcondition: A true return value indicates that there is a valid "current" item that may be retrieved by activating the current member function. 
+	//A false return value indicates that there is no valid current item.
 
 	sequence::value_type sequence::current() const {
 		assert(is_item());
-		return *cursor;
+		return cursor->data();
 	}
-
-	//     Postcondition: The item returned is the current item in the sequence.
-
+	//Postcondition: The item returned is the current item in the sequence.
 
 }
